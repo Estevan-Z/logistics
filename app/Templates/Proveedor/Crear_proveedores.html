@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Proveedor</title>
+    {% extends 'Home/base.html' %}
+    {% block content %}
+    <style>
+        h2 {
+            text-align: center;
+            color: #4a4a4a;
+            font-size: 2rem; 
+        }
+
+        .form-container {
+            
+            max-width: 700px;
+            background-color: #ffffff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: auto;
+            
+        }
+
+        .form_proveedor {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form_proveedor label {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .form_proveedor input,
+        .form_proveedor select,
+        .form_proveedor textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1.1rem; 
+            transition: border-color 0.3s;
+        }
+
+        .form_proveedor input:focus,
+        .form_proveedor select:focus,
+        .form_proveedor textarea:focus {
+            border-color: #4a90e2;
+            outline: none;
+        }
+
+        .subir {
+            background-color: #4a90e2;
+            color: #ffffff;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1.2rem; 
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .subir:hover {
+            background-color: #357ab8;
+        }
+
+        .subir:active {
+            transform: scale(0.98);
+        }
+
+        @media (max-width: 480px) {
+            .form-container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Crear Proveedor</h2>
+        <form class="form_proveedor" method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button class="subir" type="submit">Guardar Proveedor</button>
+        </form>
+    </div>
+    {% endblock %}
+</body>
+</html>

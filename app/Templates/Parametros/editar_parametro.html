@@ -1,0 +1,5 @@
+<form id="editar-parametro-form">
+    {% csrf_token %}
+    <label for="nuevo_valor">Nuevo Valor:</label>
+    <input type="text" name="nuevo_valor" id="nuevo_valor" value="{% if parametro.grupo %}{{ parametro.grupo }}{% elif parametro.linea %}{{ parametro.linea }}{% elif parametro.unidad %}{{ parametro.unidad }}{% endif %}" required>
+</form>

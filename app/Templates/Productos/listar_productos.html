@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    {% extends 'Home/base.html' %}
+    {% block content %}
+</head>
+<body>
+    <h2>Lista de Productos</h2>
+    <div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Nombre</th>
+                <th>Marca</th>
+                <th>Grupo</th>
+                <th>Línea</th>
+                <th>Unidad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ producto.nombre_producto }}</td>
+                    <td>{{ producto.marca }}</td>
+                    <td>{{ producto.grupo }}</td>
+                    <td>{{ producto.linea }}</td>
+                    <td>{{ producto.unidad }}</td>
+                    <td>
+                        <a href="#" onclick="mostrarFormularioEdicion('{{ producto.id_producto }}')">
+                            <ion-icon name="create-outline"></ion-icon>
+                        </a>
+                        <a href="{% url 'eliminar_producto' producto.id_producto %}" onclick="event.preventDefault(); confirmarEliminacion(this.href);" class="red">
+                            <ion-icon name="trash-outline"></ion-icon>
+                        </a>
+                    </td>
+                    
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    
+    <style>
+        ion-icon {
+                font-size: 24px;
+                color: #4CAF50; 
+                transition: transform 0.3s, color 0.3s; 
+            }
+
+            a:hover ion-icon {
+                transform: scale(1.2); 
+                color: #FF5722; 
+            }
+
+            a.red ion-icon {
+                color: #F44336; 
+            }
+
+            a.red:hover ion-icon {
+                color: #D32F2F; 
+            }
+
+        .table-container {
+            margin: 50px auto;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        thead tr {
+            background-color: black;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        thead th {
+            padding: 15px;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        tbody tr:nth-of-type(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f2f2f2;
+            transition: background 0.3s ease-in-out;
+        }
+
+        tbody td {
+            padding: 15px;
+            font-size: 14px;
+            color: #333333;
+        }
+
+        @media (max-width: 768px) {
+            thead {
+                display: none;
+            }
+            table, tbody, tr, td {
+                display: block;
+                width: 100%;
+            }
+            tr {
+                margin-bottom: 15px;
+                border: 1px solid #ddd;
+                border-radius: 10px;
+            }
+            td {
+                text-align: right;
+                padding-left: 50%;
+                position: relative;
+            }
+            td::before {
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                font-weight: bold;
+                text-transform: uppercase;
+            }
+        }
+    </style>
+    <script>
+        function mostrarFormularioEdicion(productoId) {
+            const url = `{% url 'editar_producto' 0 %}`.replace('0', productoId);
+    
+            fetch(url, { method: 'GET' })
+                .then(response => response.text())
+                .then(html => {
+                    Swal.fire({
+                        title: 'Actualizar Producto',
+                        html: html,
+                        showCancelButton: true,
+                        cancelButtonText: 'Cerrar',
+                        confirmButtonText: 'Guardar',
+                        preConfirm: () => {
+                            const form = Swal.getHtmlContainer().querySelector('form');
+                            const formData = new FormData(form);
+                            return fetch(url, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                                }
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.text().then(text => { throw new Error(text) });
+                                }
+                                return response.json();
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage('Error al guardar: ' + error.message);
+                            });
+                        }
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            Swal.fire('Guardado', 'El producto ha sido actualizado.', 'success').then(() => {
+                                location.reload();
+                            });
+                        }
+                    });
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+                });
+        }
+    </script>
+    
+
+    <script>
+        function confirmarEliminacion(url) {
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "¡No podrás revertir esto!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Sí, elimínalo!',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        }
+    </script>
+
+    {% endblock %}
+</body>
+</html>

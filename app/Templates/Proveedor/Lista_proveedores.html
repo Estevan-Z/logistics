@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Proveedores</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    {% extends 'Home/base.html' %}
+    {% block content %}
+</head>
+<body>
+    <h2>Lista de Proveedores</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>NIT</th>
+                    <th>Nombre Comercial</th>
+                    <th>Representante Legal</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for proveedor in proveedores %}
+                <tr data-nombre-comercial="{{ proveedor.nombre_comercial }}"
+                    data-representante-legal="{{ proveedor.representante_legal }}"
+                    data-nit="{{ proveedor.nit }}"
+                    data-direccion="{{ proveedor.direccion }}"
+                    data-telefono="{{ proveedor.telefono }}"
+                    data-correo-electronico="{{ proveedor.correo_electronico }}"
+                    onclick="mostrarDetallesProveedor(this)">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ proveedor.nit }}</td>
+                    <td>{{ proveedor.nombre_comercial }}</td>
+                    <td>{{ proveedor.representante_legal }}</td>
+                    <td>
+                        <a href="#" onclick="mostrarFormularioEdicion('{{ proveedor.id_proveedor }}')">
+                            <ion-icon name="create-outline"></ion-icon>
+                        </a>
+                        <a href="#" class="red" onclick="eliminarProveedor('{{ proveedor.id_proveedor }}', event)">
+                            <ion-icon name="trash-outline"></ion-icon>
+                        </a>
+                        
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9">No hay proveedores registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <style>
+        ion-icon {
+            font-size: 24px;
+            color: #4CAF50;
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        a:hover ion-icon {
+            transform: scale(1.2);
+            color: #FF5722;
+        }
+
+        a.red ion-icon {
+            color: #F44336;
+        }
+
+        a.red:hover ion-icon {
+            color: #D32F2F;
+        }
+
+        .table-container {
+            margin: 50px auto;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #ffffff;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        thead tr {
+            background-color: black;
+            color: #ffffff;
+            text-align: left;
+        }
+
+        thead th {
+            padding: 15px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid #dddddd;
+        }
+
+        tbody tr:nth-of-type(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f2f2f2;
+        }
+
+        tbody td {
+            padding: 15px;
+        }
+    </style>
+
+    <script>
+        function mostrarDetallesProveedor(row) {
+            const proveedor = {
+                nombre_comercial: row.getAttribute('data-nombre-comercial'),
+                representante_legal: row.getAttribute('data-representante-legal'),
+                nit: row.getAttribute('data-nit'),
+                direccion: row.getAttribute('data-direccion'),
+                telefono: row.getAttribute('data-telefono'),
+                correo_electronico: row.getAttribute('data-correo-electronico')
+            };
+
+            Swal.fire({
+                title: 'Detalles del Proveedor',
+                html: `
+                    <strong>Nombre Comercial:</strong> ${proveedor.nombre_comercial}<br>
+                    <strong>Representante Legal:</strong> ${proveedor.representante_legal}<br>
+                    <strong>NIT:</strong> ${proveedor.nit}<br>
+                    <strong>Dirección:</strong> ${proveedor.direccion}<br>
+                    <strong>Teléfono:</strong> ${proveedor.telefono}<br>
+                    <strong>Correo Electrónico:</strong> ${proveedor.correo_electronico}<br>
+                `,
+                icon: 'info',
+                confirmButtonText: 'Cerrar'
+            });
+        }
+
+        function mostrarFormularioEdicion(proveedorId) {
+            const url = `{% url 'editar_proveedor' 0 %}`.replace('0', proveedorId);
+
+            fetch(url, { method: 'GET' })
+                .then(response => response.text())
+                .then(html => {
+                    Swal.fire({
+                        title: 'Editar Proveedor',
+                        html: html,
+                        showCancelButton: true,
+                        cancelButtonText: 'Cerrar',
+                        confirmButtonText: 'Guardar',
+                        preConfirm: () => {
+                            const form = Swal.getHtmlContainer().querySelector('form');
+                            const formData = new FormData(form);
+                            return fetch(url, {
+                                method: 'POST',
+                                body: formData,
+                                headers: {
+                                    'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                                }
+                            })
+                            .then(response => {
+                                if (!response.ok) {
+                                    return response.text().then(text => { throw new Error(text) });
+                                }
+                                return response.json();
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage('Error al guardar: ' + error.message);
+                            });
+                        }
+                    }).then(result => {
+                        if (result.isConfirmed) {
+                            Swal.fire('Guardado', 'El proveedor ha sido actualizado.', 'success').then(() => {
+                                location.reload(); 
+                            });
+                        }
+                    });
+                })
+                .catch(error => {
+                    Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+                });
+        }
+    </script>
+
+    <script>
+   function eliminarProveedor(proveedorId, event) {
+    event.stopPropagation(); 
+    Swal.fire({
+        title: '¿Estás seguro?',
+        text: "¡No podrás revertir esto!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Sí, elimínalo!',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            const url = `{% url 'eliminar_proveedor' 0 %}`.replace('0', proveedorId);
+            window.location.href = url;
+        }
+    });
+}
+    </script>
+    {% endblock %}
+</body>
+</html>

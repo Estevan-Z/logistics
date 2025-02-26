@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Mi Sitio{% endblock %}</title>
+    {% load static %}
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+</head>
+<body>
+    <div class="wrapper">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="ri-code-s-slash-line"></i>
+                    <span>Mi Sistema</span>
+                </div>
+                <button id="toggle-sidebar" class="toggle-btn">
+                    <i class="ri-menu-fold-line"></i>
+                </button>
+                <div class="search-box">
+                    <i class="ri-search-line"></i>
+                    <input type="text" placeholder="Buscar...">
+                </div>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li class="menu-header">Menu</li>
+                <li class="menu-item {% if request.path == '/' %}active{% endif %}">
+                    <a href="{% url 'base' %}">
+                        <i class="ri-home-line"></i>
+                        <span>Inicio</span>
+                    </a>
+                </li>
+                <li class="menu-item {% if request.path == '/' %}active{% endif %}">
+                    <a href="{% url 'registrar_entrada' %}">
+                        <i class="ri-home-line"></i>
+                        <span>Entrada</span>
+                    </a>
+                </li>
+               <details>
+                <summary>Apertura de terceros</summary>
+                   <li class="menu-item {% if 'crear_proveedor' in request.path %}active{% endif %}">
+                       <a href="{% url 'crear_proveedor' %}">
+                           <i class="ri-add-circle-line"></i>
+                           <span>Crear Proveedor</span>
+                       </a>
+                   </li>
+                   <li class="menu-item {% if 'lista_proveedores' in request.path %}active{% endif %}">
+                       <a href="{% url 'lista_proveedores' %}">
+                            <i class="ri-list-check"></i>
+                           <span>Lista Proveedores</span>
+                       </a>
+                   </li>
+               </details> 
+               <details>
+                    <summary>Parametros</summary>
+                   <li class="menu-item {% if 'crear_parametros' in request.path %}active{% endif %}">
+                       <a href="{% url 'parametros_producto' %}">
+                           <i class="ri-add-circle-line"></i>
+                           <span>Crear Parametros</span>
+                       </a>
+                   </li>
+                   <li class="menu-item {% if 'listar_parametros' in request.path %}active{% endif %}">
+                       <a href="{% url 'listar_parametros' %}">
+                            <i class="ri-list-check"></i>
+                           <span>Lista Parametros</span>
+                       </a>
+                   </li>
+               </details>
+               <details>
+                    <summary>Apertura de producto</summary>
+                    <li class="menu-item {% if 'crear_producto' in request.path %}active{% endif %}">
+                        <a href="{% url 'crear_producto' %}">
+                            <i class="ri-add-circle-line"></i>
+                            <span>Crear Producto</span>
+                        </a>
+                    </li>
+                    <li class="menu-item {% if 'listar_productos' in request.path %}active{% endif %}">
+                        <a href="{% url 'listar_productos' %}">
+                             <i class="ri-list-check"></i>
+                            <span>Lista Producto</span>
+                        </a>
+                    </li>
+               </details>
+            </ul>
+            
+            <div class="theme-toggle">
+                <button id="theme-toggle">
+                    <i class="ri-sun-line"></i>
+                    <span>Cambiar tema</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="content">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+    <script src="{% static 'js/base.js' %}"></script>
+    <style>
+        body {
+            background-image: url("{% static 'image/Fondo.jpg' %}");
+        }
+        </style>
+        
+   
+</body>
+</html>

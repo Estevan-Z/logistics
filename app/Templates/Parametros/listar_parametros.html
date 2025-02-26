@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+    <title>Parámetros</title>
+    {% extends 'Home/base.html' %}
+    {% block content %}
+</head>
+<body>
+    <h2>PARÁMETROS EXISTENTES</h2>
+    <div class="parameters-container">
+        <div class="parametro">
+            <h3>GRUPO</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>DESCRIPCION</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parametro in parametros %}
+                        {% if parametro.grupo %}
+                            <tr>
+                                <td>{{ parametro.grupo }}</td>
+                                <td>
+                                    <a href="#" onclick="mostrarFormularioEdicionParametro('{{ parametro.id }}')">
+                                        <ion-icon name="create-outline"></ion-icon>
+                                    </a>
+                                    
+                                    <a href="{% url 'eliminar_parametro' parametro.id %}" class="red" data-id="{{ parametro.id }}"><ion-icon name="trash-outline"></ion-icon></a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="parametro">
+            <h3>LÍNEA</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>DESCRIPCION</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parametro in parametros %}
+                        {% if parametro.linea %}
+                            <tr>
+                                <td>{{ parametro.linea }}</td>
+                                <td>
+                                    <a href="#" onclick="mostrarFormularioEdicionParametro('{{ parametro.id }}')">
+                                        <ion-icon name="create-outline"></ion-icon>
+                                    </a>
+                                    
+                                    <a href="{% url 'eliminar_parametro' parametro.id %}" class="red" data-id="{{ parametro.id }}"><ion-icon name="trash-outline"></ion-icon></a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="parametro">
+            <h3>UNIDAD</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>DESCRIPCION</th>
+                        <th>ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for parametro in parametros %}
+                        {% if parametro.unidad %}
+                            <tr>
+                                <td>{{ parametro.unidad }}</td>
+                                <td>
+                                    <a href="#" onclick="mostrarFormularioEdicionParametro('{{ parametro.id }}')">
+                                        <ion-icon name="create-outline"></ion-icon>
+                                    </a>
+                                    
+                                    <a href="{% url 'eliminar_parametro' parametro.id %}" class="red"" data-id="{{ parametro.id }}"><ion-icon name="trash-outline"></ion-icon></a>
+                                </td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <style>
+        ion-icon {
+                font-size: 24px; 
+                color: #4CAF50; 
+                transition: transform 0.3s, color 0.3s; 
+            }
+
+            a:hover ion-icon {
+                transform: scale(1.2); 
+                color: #FF5722; 
+            }
+
+            a.red ion-icon {
+                color: #F44336;
+            }
+
+            a.red:hover ion-icon {
+                color: #D32F2F; /
+            }
+        .parameters-container {
+            display: flex;
+            gap: 20px;
+            margin: 30px auto;
+            max-width: 100%;
+        }
+
+        .parametro {
+            background: #ffffff;
+            border: 1px solid #dddddd;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            width: 100%;
+        }
+
+        .parametro h3 {
+            text-align: center;
+            color: #333333;
+            margin-bottom: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            border: 1px solid #dddddd;
+            padding: 15px;
+        }
+
+        th {
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+    </style>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.querySelectorAll('.red').forEach(button => {
+        button.addEventListener('click', function(event) {
+            event.preventDefault();  
+
+            const url = this.getAttribute('href');  
+
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "¡No podrás revertir esto!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Sí, eliminarlo"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+</script>
+<script>
+    function mostrarFormularioEdicionParametro(parametroId) {
+    const url = `{% url 'editar_parametro' 0 %}`.replace('0', parametroId);
+
+    fetch(url, { method: 'GET' })
+        .then(response => response.text())
+        .then(html => {
+            Swal.fire({
+                title: 'Actualizar Parámetro',
+                html: html,
+                showCancelButton: true,
+                cancelButtonText: 'Cerrar',
+                confirmButtonText: 'Guardar',
+                preConfirm: () => {
+                    const form = Swal.getHtmlContainer().querySelector('#editar-parametro-form');
+                    const formData = new FormData(form);
+                    return fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-CSRFToken': formData.get('csrfmiddlewaretoken')
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            return response.json().then(data => { throw new Error(data.errors || 'Error al guardar'); });
+                        }
+                        return response.json();
+                    })
+                    .catch(error => {
+                        Swal.showValidationMessage('Error al guardar: ' + error.message);
+                    });
+                }
+            }).then(result => {
+                if (result.isConfirmed) {
+                    Swal.fire('Guardado', 'El parámetro ha sido actualizado.', 'success').then(() => {
+                        location.reload();
+                    });
+                }
+            });
+        })
+        .catch(error => {
+            Swal.fire('Error', 'No se pudo cargar el formulario.', 'error');
+        });
+}
+
+</script>
+
+{% endblock %}
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    
+</head>
+<body>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+</form>
+<style>
+    
+    .form_producto {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 100%;
+        background-color: #f9f9f9;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin: 0 auto;
+    }
+
+    .form-control, select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+    }
+
+    .form-control:focus, select:focus {
+        border-color: royalblue;
+        outline: none;
+        box-shadow: 0 0 5px rgba(65, 105, 225, 0.5);
+    }
+
+    .subir {
+        border: none;
+        outline: none;
+        background-color: royalblue;
+        padding: 12px;
+        border-radius: 8px;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease-in-out;
+    }
+
+    .subir:hover {
+        background-color: rgb(56, 90, 194);
+    }
+
+    @media (max-width: 600px) {
+        .form_producto {
+            padding: 15px;
+        }
+        .subir {
+            font-size: 14px;
+        }
+    }
+</style>
+</body>
+</html>

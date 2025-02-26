@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parámetros del Producto</title>
+    {% extends 'Home/base.html' %}
+    {% load static %}
+    {% block content %}
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+<body>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            Swal.fire({
+                title: 'Seleccione una opción',
+                html: `
+                    <div class="selector-container">
+                        <label>
+                            <input type="radio" name="action" value="grupo" checked>
+                            Grupo
+                        </label>
+                        <label>
+                            <input type="radio" name="action" value="linea">
+                            Línea
+                        </label>
+                        <label>
+                            <input type="radio" name="action" value="unidad">
+                            Unidad
+                        </label>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Aceptar',
+                cancelButtonText: 'Cancelar',
+                preConfirm: () => {
+                    const selectedOption = document.querySelector('input[name="action"]:checked').value;
+                    return selectedOption;
+                }
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const selectedOption = result.value;
+
+                    let formHtml = '';
+                    if (selectedOption === 'grupo') {
+                        formHtml = `
+                            <form id="form-grupo" method="POST" action="{% url 'parametros_producto' %}">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="grupo">Grupo</label>
+                                    <input class="input" type="text" name="grupo" placeholder="Ingrese el grupo" required>
+                                    <button type="submit" name="guardar_grupo" class="subir">Guardar</button>
+                                </div>
+                            </form>
+                        `;
+                    } else if (selectedOption === 'linea') {
+                        formHtml = `
+                            <form id="form-linea" method="POST" action="{% url 'parametros_producto' %}">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="linea">Línea</label>
+                                    <input class="input" type="text" name="linea" placeholder="Ingrese la línea" required>
+                                    <button type="submit" name="guardar_linea" class="subir">Guardar</button>
+                                </div>
+                            </form>
+                        `;
+                    } else if (selectedOption === 'unidad') {
+                        formHtml = `
+                            <form id="form-unidad" method="POST" action="{% url 'parametros_producto' %}">
+                                {% csrf_token %}
+                                <div>
+                                    <label for="unidad">Unidad</label>
+                                    <input class="input" type="text" name="unidad" placeholder="Ingrese la unidad" required>
+                                    <button type="submit" name="guardar_unidad" class="subir">Guardar</button>
+                                </div>
+                            </form>
+                        `;
+                    }
+
+                    Swal.fire({
+                        title: `Agregar ${selectedOption}`,
+                        html: formHtml,
+                        showCancelButton: false,  
+                        showConfirmButton: false, 
+                        focusConfirm: false
+                    });
+                }
+            });
+        });
+    </script>
+
+    <style>
+        .selector-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            font-size: 16px;
+        }
+
+        .selector-container label {
+            cursor: pointer;
+        }
+
+        .form_parametros {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 350px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 20px;
+            position: relative;
+        }
+
+        .input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid rgba(105, 105, 105, 0.397);
+            border-radius: 10px;
+        }
+
+        .subir {
+            border: none;
+            outline: none;
+            background-color: royalblue;
+            padding: 10px;
+            border-radius: 10px;
+            color: #fff;
+            font-size: 16px;
+            transition: 0.3s ease;
+        }
+
+        .subir:hover {
+            background-color: rgb(56, 90, 194);
+        }
+    </style>
+{% endblock %}
+</body>
+</html>
