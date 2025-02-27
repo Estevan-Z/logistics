@@ -1,165 +1,210 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registrar Entrada de Mercancía</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <style>
-        .container {
-            display: flex;
-        }
-        .table-container {
-            margin-right: 20px;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        table, th, td {
-            border: 1px solid black;
-        }
-        th, td {
-            padding: 10px;
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
-    <h1>Registrar Entrada de Mercancía</h1>
-    {% if error %}
-        <p style="color: red;">{{ error }}</p>
-    {% endif %}
+{% extends 'Home/base.html' %}
+{% load static %}
+{% block content %}
+
+<!-- Importación de librerías -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<!-- Mensaje de error en caso de ser necesario -->
+{% if error %}
+<p class="error-message">{{ error }}</p>
+{% endif %}
+
+<div class="Container_entrada">
+    <!-- Formulario de entrada de productos -->
+    <form id="entradaForm">
+        {% csrf_token %}
     
-    <div class="container">
-        <div class="table-container">
-            <h2>Productos Agregados</h2>
-            <table id="productosTable">
-                <thead>
-                    <tr>
-                        <th>Producto</th>
-                        <th>Lote</th>
-                        <th>Fecha Vencimiento</th>
-                        <th>Cantidad</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-        </div>
-
-        <form id="entradaForm">
-            {% csrf_token %}
-            <p id="selectedProveedorText">Proveedor seleccionado: Ninguno</p>
-            <input type="hidden" name="proveedor" id="proveedorHidden" required>
-
-            <label for="producto">Producto:</label>
-            <select name="producto" id="producto" required>
-                <option value="">Seleccione un producto</option>
-                {% for producto in productos %}
-                    <option value="{{ producto.id_producto }}">{{ producto.nombre_producto }}</option>
-                {% endfor %}
-            </select>
-            <br><br>
-
-            <label for="lote">Lote:</label>
-            <input type="text" name="lote" id="lote" placeholder="Lote del producto" required>
-            <br><br>
-
-            <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
-            <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" required>
-            <br><br>
-
-            <label for="cantidad">Cantidad:</label>
-            <input type="number" name="cantidad" id="cantidad" required>
-            <br><br>
-
-            <button type="button" id="agregarProductoButton">Agregar Producto</button>
-        </form>
+        <label for="producto">Producto:</label>
+        <select name="producto" id="producto" required>
+            <option value="">Seleccione un producto</option>
+            {% for producto in productos %}
+                <option value="{{ producto.id_producto }}">{{ producto.nombre_producto }}</option>
+            {% endfor %}
+        </select>
+    
+        <label for="lote">Lote:</label>
+        <input type="text" name="lote" id="lote" placeholder="Lote del producto" required>
+    
+        <label for="fecha_vencimiento">Fecha de Vencimiento:</label>
+        <input type="date" name="fecha_vencimiento" id="fecha_vencimiento" required>
+    
+        <label for="cantidad">Cantidad:</label>
+        <input type="number" name="cantidad" id="cantidad" required>
+    
+        <button type="button" id="agregarProductoButton">Agregar Producto</button>
+    </form>
+    <!-- Tabla de productos agregados -->
+    <div class="table-container">
+        <p id="selectedProveedorText">Proveedor seleccionado ------</p>
+        <input type="hidden" name="proveedor" id="proveedorHidden" required>
+        <h2>Productos</h2>
+        <table id="productosTable">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Lote</th>
+                    <th>Fecha Vencimiento</th>
+                    <th>Cantidad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
+    
+</div>
 
-    <script>
-        window.onload = function() {
-            const proveedores = [
-                {% for proveedor in proveedores %}
-                    { id: "{{ proveedor.id_proveedor }}", nombre: "{{ proveedor.nombre_comercial }}" },
-                {% endfor %}
-            ];
+<!-- Script para gestionar la selección de proveedor y agregar productos -->
+<script>
+    window.onload = function() {
+        const proveedores = [
+            {% for proveedor in proveedores %}
+                { id: "{{ proveedor.id_proveedor }}", nombre: "{{ proveedor.nombre_comercial }}" },
+            {% endfor %}
+        ];
 
-            const options = proveedores.map(proveedor => `<option value="${proveedor.id}">${proveedor.nombre}</option>`).join('');
+        const options = proveedores.map(proveedor => `<option value="${proveedor.id}">${proveedor.nombre}</option>`).join('');
 
-            Swal.fire({
-                title: 'Seleccionar Proveedor',
-                html: `
-                    <select id="swalProveedor" class="swal2-input">
-                        <option value="">Seleccione un proveedor</option>
-                        ${options}
-                    </select>
-                `,
-                allowOutsideClick: false,
-                showCancelButton: false,
-                confirmButtonText: 'Aceptar',
-                preConfirm: () => {
-                    const selectedProveedor = document.getElementById('swalProveedor').value;
-                    if (!selectedProveedor) {
-                        Swal.showValidationMessage('Por favor, seleccione un proveedor');
-                        return false;
-                    }
-                    return selectedProveedor;
+        Swal.fire({
+            title: 'Seleccionar Proveedor',
+            html: `<select id="swalProveedor" class="swal2-input">
+                    <option value="">Seleccione un proveedor</option>
+                    ${options}
+                </select>`,
+            allowOutsideClick: false,
+            showCancelButton: false,
+            confirmButtonText: 'Aceptar',
+            preConfirm: () => {
+                const selectedProveedor = document.getElementById('swalProveedor').value;
+                if (!selectedProveedor) {
+                    Swal.showValidationMessage('Por favor, seleccione un proveedor');
+                    return false;
                 }
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const selectedId = result.value;
-                    const selectedNombre = proveedores.find(p => p.id === selectedId).nombre;
-
-                    document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedNombre}`;
-
-                    document.getElementById('proveedorHidden').value = selectedId;
-                }
-            });
-        };
-
-        document.getElementById('agregarProductoButton').addEventListener('click', function() {
-            // Obtener valores del formulario
-            const productoSelect = document.getElementById('producto');
-            const productoId = productoSelect.value;
-            const productoNombre = productoSelect.options[productoSelect.selectedIndex].text;
-            const lote = document.getElementById('lote').value;
-            const fechaVencimiento = document.getElementById('fecha_vencimiento').value;
-            const cantidad = document.getElementById('cantidad').value;
-
-            if (!productoId || !lote || !fechaVencimiento || !cantidad) {
-                Swal.fire({
-                    title: 'Error',
-                    text: 'Por favor, complete todos los campos.',
-                    icon: 'error',
-                    confirmButtonText: 'OK'
-                });
-                return;
+                return selectedProveedor;
             }
-
-            const tableBody = document.getElementById('productosTable').querySelector('tbody');
-            const newRow = document.createElement('tr');
-
-            newRow.innerHTML = `
-                <td>${productoNombre}</td>
-                <td>${lote}</td>
-                <td>${fechaVencimiento}</td>
-                <td>${cantidad}</td>
-                <td>
-                    <button type="button" class="eliminarButton">Eliminar</button>
-                </td>
-            `;
-
-            tableBody.appendChild(newRow);
-
-            document.getElementById('entradaForm').reset();
-
-            newRow.querySelector('.eliminarButton').addEventListener('click', function() {
-                tableBody.removeChild(newRow);
-            });
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const selectedId = result.value;
+                const selectedNombre = proveedores.find(p => p.id === selectedId).nombre;
+                document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedNombre}`;
+                document.getElementById('proveedorHidden').value = selectedId;
+            }
         });
-    </script>
-</body>
-</html>
+    };
+
+    document.getElementById('agregarProductoButton').addEventListener('click', function() {
+        const productoSelect = document.getElementById('producto');
+        const productoId = productoSelect.value;
+        const productoNombre = productoSelect.options[productoSelect.selectedIndex].text;
+        const lote = document.getElementById('lote').value;
+        const fechaVencimiento = document.getElementById('fecha_vencimiento').value;
+        const cantidad = document.getElementById('cantidad').value;
+
+        if (!productoId || !lote || !fechaVencimiento || !cantidad) {
+            Swal.fire({
+                title: 'Error',
+                text: 'Por favor, complete todos los campos.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        const tableBody = document.getElementById('productosTable').querySelector('tbody');
+        const newRow = document.createElement('tr');
+
+        newRow.innerHTML = `
+            <td>${productoNombre}</td>
+            <td>${lote}</td>
+            <td>${fechaVencimiento}</td>
+            <td>${cantidad}</td>
+            <td><button type="button" class="eliminarButton">Eliminar</button></td>
+        `;
+
+        tableBody.appendChild(newRow);
+        document.getElementById('entradaForm').reset();
+
+        newRow.querySelector('.eliminarButton').addEventListener('click', function() {
+            tableBody.removeChild(newRow);
+        });
+    });
+</script>
+
+<!-- Estilos CSS -->
+<style>
+    .Container_entrada {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    .table-container {
+        flex: 1;
+        flex-grow: 1;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+    form{
+        width: 400px;
+        flex-shrink: 0;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 20px;
+    }
+
+    #lote, #fecha_vencimiento,#cantidad, select {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+    th, td {
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+    }
+
+    .eliminarButton {
+        background-color: #f44336;
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+
+    .eliminarButton:hover {
+        background-color: #e53935;
+    }
+
+    #selectedProveedorText {
+        margin-bottom: 15px;
+        font-size: 16px;
+        color: #333;
+    }
+
+    .error-message {
+        color: red;
+        font-size: 14px;
+        margin-top: 10px;
+    }
+</style>
+
+{% endblock %}
