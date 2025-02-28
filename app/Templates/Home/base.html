@@ -101,11 +101,34 @@
         </main>
     </div>
     <script src="{% static 'js/base.js' %}"></script>
+
     <style>
         body {
             background-image: url("{% static 'image/Fondo.jpg' %}");
         }
         </style>
+
+        <script>
+            document.addEventListener("keydown", function(event) {
+                if (event.key === "Escape") {
+                event.preventDefault();
+
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "¿Deseas abandonar la página?",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Sí, salir",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = "{% url 'base' %}";
+                }
+            });
+        }
+    });
+
+        </script>
         
    
 </body>

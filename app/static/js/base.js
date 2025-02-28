@@ -18,3 +18,4 @@ document.getElementById('toggle-sidebar').addEventListener('click', function() {
         icon.classList.replace('ri-menu-unfold-line', 'ri-menu-fold-line');
     }
 });
+

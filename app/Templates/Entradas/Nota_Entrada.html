@@ -1,9 +1,7 @@
 {% extends 'Home/base.html' %}
 {% load static %}
 {% block content %}
-
-<!-- Importación de librerías -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<h1>Registro de Ingresos</h1>
 
 <!-- Mensaje de error en caso de ser necesario -->
 {% if error %}
@@ -16,12 +14,10 @@
         {% csrf_token %}
     
         <label for="producto">Producto:</label>
-        <select name="producto" id="producto" required>
-            <option value="">Seleccione un producto</option>
-            {% for producto in productos %}
-                <option value="{{ producto.id_producto }}">{{ producto.nombre_producto }}</option>
-            {% endfor %}
-        </select>
+        <input type="text" id="buscarProducto" placeholder="Buscar producto..." autocomplete="off" class="swal-input">
+        <div id="productosList" class="productos-list"></div>
+
+        <input type="hidden" name="producto" id="productoHidden" required>
     
         <label for="lote">Lote:</label>
         <input type="text" name="lote" id="lote" placeholder="Lote del producto" required>
@@ -34,10 +30,14 @@
     
         <button type="button" id="agregarProductoButton">Agregar Producto</button>
     </form>
+
     <!-- Tabla de productos agregados -->
     <div class="table-container">
-        <p id="selectedProveedorText">Proveedor seleccionado ------</p>
+        <p id="selectedProveedorText">Proveedor: ------</p>
+        <p id="selectedProveedorNit">Nit: ------</p>
         <input type="hidden" name="proveedor" id="proveedorHidden" required>
+        <button type="button" id="seleccionarProveedorButton">Seleccionar Proveedor</button>
+
         <h2>Productos</h2>
         <table id="productosTable">
             <thead>
@@ -52,51 +52,214 @@
             <tbody></tbody>
         </table>
     </div>
-    
 </div>
 
 <!-- Script para gestionar la selección de proveedor y agregar productos -->
 <script>
     window.onload = function() {
+        iniciarSeleccionProveedor();
+        iniciarSeleccionProducto();
+        
+        const botonSeleccion = document.getElementById('seleccionarProveedorButton');
+        if (botonSeleccion) {
+            botonSeleccion.addEventListener('click', iniciarSeleccionProveedor);
+        }
+    };
+
+    // Función para manejar la búsqueda y selección de proveedor
+    function iniciarSeleccionProveedor() {
         const proveedores = [
             {% for proveedor in proveedores %}
-                { id: "{{ proveedor.id_proveedor }}", nombre: "{{ proveedor.nombre_comercial }}" },
+                { id: "{{ proveedor.id_proveedor }}", nombre: "{{ proveedor.nombre_comercial }}", nit: "{{ proveedor.nit }}" },
             {% endfor %}
         ];
 
-        const options = proveedores.map(proveedor => `<option value="${proveedor.id}">${proveedor.nombre}</option>`).join('');
-
         Swal.fire({
             title: 'Seleccionar Proveedor',
-            html: `<select id="swalProveedor" class="swal2-input">
-                    <option value="">Seleccione un proveedor</option>
-                    ${options}
-                </select>`,
+            html: `
+                <label for="buscarProveedor">Buscar Proveedor:</label>
+                <input type="text" id="buscarProveedor" placeholder="Escribe el nombre o NIT del proveedor" autocomplete="off" class="swal-input">
+                <div id="proveedoresList" class="proveedores-list"></div>
+            `,
             allowOutsideClick: false,
             showCancelButton: false,
             confirmButtonText: 'Aceptar',
+            didOpen: () => {
+                const buscarInput = document.getElementById('buscarProveedor');
+                buscarInput.focus();
+                buscarInput.addEventListener('input', actualizarListaProveedor);
+                buscarInput.addEventListener('keydown', manejarTeclasProveedor);
+            },
             preConfirm: () => {
-                const selectedProveedor = document.getElementById('swalProveedor').value;
-                if (!selectedProveedor) {
+                const selectedItem = document.querySelector('.proveedor-item.selected');
+                if (!selectedItem) {
                     Swal.showValidationMessage('Por favor, seleccione un proveedor');
                     return false;
                 }
-                return selectedProveedor;
+                return selectedItem.dataset.id;
             }
         }).then((result) => {
             if (result.isConfirmed) {
                 const selectedId = result.value;
-                const selectedNombre = proveedores.find(p => p.id === selectedId).nombre;
-                document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedNombre}`;
+                const selectedProveedor = proveedores.find(p => p.id === selectedId);
+
+                document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedProveedor.nombre}`;
+                document.getElementById('selectedProveedorNit').innerText = `NIT: ${selectedProveedor.nit}`;
                 document.getElementById('proveedorHidden').value = selectedId;
             }
         });
-    };
 
+        let selectedIndex = -1;
+        
+        function actualizarListaProveedor() {
+            const query = document.getElementById('buscarProveedor').value.toLowerCase();
+            const filteredProveedores = proveedores.filter(proveedor => 
+                proveedor.nombre.toLowerCase().includes(query) || proveedor.nit.toLowerCase().includes(query)
+            );
+
+            let proveedoresList = '';
+            filteredProveedores.forEach((proveedor, index) => {
+                proveedoresList += `<div class="proveedor-item ${index === 0 ? 'selected' : ''}" data-id="${proveedor.id}" data-nit="${proveedor.nit}">${proveedor.nombre} - NIT: ${proveedor.nit}</div>`;
+            });
+
+            selectedIndex = filteredProveedores.length > 0 ? 0 : -1;
+            document.getElementById('proveedoresList').innerHTML = proveedoresList || '<p class="no-result">No se encontraron proveedores</p>';
+
+            document.querySelectorAll('.proveedor-item').forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    seleccionarProveedorItem(item);
+                });
+            });
+        }
+
+        function manejarTeclasProveedor(event) {
+            const items = document.querySelectorAll('.proveedor-item');
+            if (items.length === 0) return;
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                if (selectedIndex < items.length - 1) {
+                    cambiarSeleccionProveedor(selectedIndex + 1);
+                }
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (selectedIndex > 0) {
+                    cambiarSeleccionProveedor(selectedIndex - 1);
+                }
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (selectedIndex >= 0) {
+                    seleccionarProveedorItem(items[selectedIndex]);
+                }
+            }
+        }
+
+        function cambiarSeleccionProveedor(nuevoIndex) {
+            const items = document.querySelectorAll('.proveedor-item');
+            if (selectedIndex >= 0) {
+                items[selectedIndex].classList.remove('selected');
+            }
+            selectedIndex = nuevoIndex;
+            items[selectedIndex].classList.add('selected');
+        }
+
+        function seleccionarProveedorItem(item) {
+            const selectedId = item.getAttribute('data-id');
+            const selectedNit = item.getAttribute('data-nit');
+            const selectedName = item.innerText.split(' - NIT: ')[0];
+
+            document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedName}`;
+            document.getElementById('selectedProveedorNit').innerText = `NIT: ${selectedNit}`;
+            document.getElementById('proveedorHidden').value = selectedId;
+
+            Swal.close();
+        }
+    }
+
+    // Función para manejar la búsqueda y selección de producto
+    function iniciarSeleccionProducto() {
+        const productos = [
+            {% for producto in productos %}
+                { id: "{{ producto.id_producto }}", nombre: "{{ producto.nombre_producto }}" },
+            {% endfor %}
+        ];
+
+        const buscarProductoInput = document.getElementById('buscarProducto');
+        const productosListDiv = document.getElementById('productosList');
+
+        let selectedIndex = -1;
+
+        buscarProductoInput.addEventListener('input', actualizarListaProducto);
+        buscarProductoInput.addEventListener('keydown', manejarTeclasProducto);
+
+        function actualizarListaProducto() {
+            const query = buscarProductoInput.value.toLowerCase();
+            const filteredProductos = productos.filter(producto => 
+                producto.nombre.toLowerCase().includes(query)
+            );
+
+            let productosList = '';
+            filteredProductos.forEach((producto, index) => {
+                productosList += `<div class="producto-item ${index === 0 ? 'selected' : ''}" data-id="${producto.id}" data-nombre="${producto.nombre}">${producto.nombre}</div>`;
+            });
+
+            selectedIndex = filteredProductos.length > 0 ? 0 : -1;
+            productosListDiv.innerHTML = productosList || '<p class="no-result">No se encontraron productos</p>';
+
+            document.querySelectorAll('.producto-item').forEach((item, index) => {
+                item.addEventListener('click', function() {
+                    seleccionarProductoItem(item);
+                });
+            });
+        }
+
+        function manejarTeclasProducto(event) {
+            const items = document.querySelectorAll('.producto-item');
+            if (items.length === 0) return;
+
+            if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                if (selectedIndex < items.length - 1) {
+                    cambiarSeleccionProducto(selectedIndex + 1);
+                }
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (selectedIndex > 0) {
+                    cambiarSeleccionProducto(selectedIndex - 1);
+                }
+            } else if (event.key === 'Enter') {
+                event.preventDefault();
+                if (selectedIndex >= 0) {
+                    seleccionarProductoItem(items[selectedIndex]);
+                }
+            }
+        }
+
+        function cambiarSeleccionProducto(nuevoIndex) {
+            const items = document.querySelectorAll('.producto-item');
+            if (selectedIndex >= 0) {
+                items[selectedIndex].classList.remove('selected');
+            }
+            selectedIndex = nuevoIndex;
+            items[selectedIndex].classList.add('selected');
+        }
+
+        function seleccionarProductoItem(item) {
+            const selectedId = item.getAttribute('data-id');
+            const selectedNombre = item.innerText;
+
+            document.getElementById('buscarProducto').value = selectedNombre;
+            document.getElementById('productoHidden').value = selectedId;
+            productosListDiv.innerHTML = '';
+
+            Swal.close();
+        }
+    }
+
+    // Agregar producto a la tabla
     document.getElementById('agregarProductoButton').addEventListener('click', function() {
-        const productoSelect = document.getElementById('producto');
-        const productoId = productoSelect.value;
-        const productoNombre = productoSelect.options[productoSelect.selectedIndex].text;
+        const productoId = document.getElementById('productoHidden').value;
+        const productoNombre = document.getElementById('buscarProducto').value;
         const lote = document.getElementById('lote').value;
         const fechaVencimiento = document.getElementById('fecha_vencimiento').value;
         const cantidad = document.getElementById('cantidad').value;
@@ -123,8 +286,13 @@
         `;
 
         tableBody.appendChild(newRow);
-        document.getElementById('entradaForm').reset();
+        document.getElementById('productoHidden').value = '';
+        document.getElementById('buscarProducto').value = '';
+        document.getElementById('lote').value = '';
+        document.getElementById('fecha_vencimiento').value = '';
+        document.getElementById('cantidad').value = '';
 
+        // Añadir funcionalidad para eliminar
         newRow.querySelector('.eliminarButton').addEventListener('click', function() {
             tableBody.removeChild(newRow);
         });
@@ -133,6 +301,105 @@
 
 <!-- Estilos CSS -->
 <style>
+    .productos-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    .producto-item {
+        padding: 12px;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+        transition: background-color 0.3s ease;
+    }
+
+    .producto-item:last-child {
+        border-bottom: none;
+    }
+
+    .producto-item:hover, .producto-item.selected {
+        background-color: #007bff;
+        color: white;
+        border-radius: 4px;
+    }
+
+    .no-result {
+        padding: 10px;
+        color: red;
+        text-align: center;
+        font-style: italic;
+    }
+
+    .producto-item span {
+        display: inline-block;
+        margin-right: 10px;
+    }
+
+    .producto-item .producto-name {
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .producto-item .producto-description {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .producto-item.selected {
+        border: 2px solid #0056b3;
+        background-color: #0056b3;
+    }
+
+    .producto-item.selected .producto-name {
+        color: #ffffff;
+    }
+    .swal-input {
+        width: 100%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        font-size: 14px;
+        box-sizing: border-box;
+    }
+
+    .proveedores-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin-top: 5px;
+        background: white;
+    }
+
+    .proveedor-item {
+        padding: 10px;
+        cursor: pointer;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .proveedor-item:last-child {
+        border-bottom: none;
+    }
+
+    .proveedor-item:hover, .proveedor-item.selected {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .no-result {
+        padding: 10px;
+        color: red;
+        text-align: center;
+    }
+
+
+
     .Container_entrada {
         display: flex;
         gap: 20px;
@@ -156,7 +423,7 @@
         padding: 20px;
     }
 
-    #lote, #fecha_vencimiento,#cantidad, select {
+    #lote, #fecha_vencimiento,#cantidad, #buscarProveedor, select {
         width: 100%;
         padding: 10px;
         margin: 8px 0;
