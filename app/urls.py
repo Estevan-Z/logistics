@@ -23,5 +23,9 @@ urlpatterns = [
 
     path('subir_excel/', views.subir_excel, name='subir_excel'),
     
+    path("generar_pdf/", views.generar_pdf, name="generar_pdf"),
+
+
+    
     
 ]

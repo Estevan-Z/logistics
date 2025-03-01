@@ -7,6 +7,12 @@ from django.http import JsonResponse
 from django.contrib import messages
 import pandas as pd
 import openpyxl
+from django.http import HttpResponse
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
+import json
 
 def base(request):
     return render(request, 'Home/base.html')
@@ -35,9 +41,6 @@ def lista_proveedores(request):
     
     return render(request, 'Proveedor/Lista_proveedores.html', {'proveedores': proveedores})
 
-
-
-
 def parametros_producto(request):
     if request.method == "POST":
         grupo = request.POST.get("grupo")
@@ -61,18 +64,12 @@ def listar_parametros(request):
     parametros = ParametrosProducto.objects.all()
     return render(request, 'Parametros/listar_parametros.html', {'parametros': parametros})
 
-from django.shortcuts import get_object_or_404, redirect
-from .models import ParametrosProducto
 
 def eliminar_parametro(request, parametro_id):
     parametro = get_object_or_404(ParametrosProducto, id=parametro_id)
     parametro.delete()
     return redirect('listar_parametros')
 
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib import messages
-
-from django.http import JsonResponse
 
 def editar_parametro(request, parametro_id):
     parametro = get_object_or_404(ParametrosProducto, id=parametro_id)
@@ -265,3 +262,34 @@ def registrar_entrada(request):
         'productos': productos,
     })
 
+
+def generar_pdf(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+        observacion = data["observacion"]
+        productos = data["productos"]
+        proveedor = data["proveedor"]
+
+        response = HttpResponse(content_type="application/pdf")
+        response["Content-Disposition"] = 'attachment; filename="factura.pdf"'
+
+        # Crear PDF
+        p = canvas.Canvas(response, pagesize=letter)
+        p.drawString(100, 750, "Factura de Ingreso")
+        p.drawString(100, 730, f"Proveedor: {proveedor['nombre']} - NIT: {proveedor['nit']}")
+        p.drawString(100, 710, f"Observación: {observacion}")
+
+        y_position = 680
+        p.drawString(100, y_position, "Productos:")
+        y_position -= 20
+
+        for producto in productos:
+            p.drawString(100, y_position, f"{producto['producto']} - Lote: {producto['lote']} - Cantidad: {producto['cantidad']} - Fecha Venc: {producto['fecha_vencimiento']}")
+            y_position -= 20
+
+        p.showPage()
+        p.save()
+
+        return response
+    return HttpResponse("Método no permitido", status=405)

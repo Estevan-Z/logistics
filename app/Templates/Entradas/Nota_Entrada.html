@@ -8,7 +8,13 @@
 <p class="error-message">{{ error }}</p>
 {% endif %}
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+
+
+
 <div class="Container_entrada">
+    
     <!-- Formulario de entrada de productos -->
     <form id="entradaForm">
         {% csrf_token %}
@@ -33,8 +39,8 @@
 
     <!-- Tabla de productos agregados -->
     <div class="table-container">
-        <p id="selectedProveedorText">Proveedor: ------</p>
-        <p id="selectedProveedorNit">Nit: ------</p>
+        <p id="selectedProveedorText">------------</p>
+        <p id="selectedProveedorNit">------------</p>
         <input type="hidden" name="proveedor" id="proveedorHidden" required>
         <button type="button" id="seleccionarProveedorButton">Seleccionar Proveedor</button>
 
@@ -103,8 +109,8 @@
                 const selectedId = result.value;
                 const selectedProveedor = proveedores.find(p => p.id === selectedId);
 
-                document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedProveedor.nombre}`;
-                document.getElementById('selectedProveedorNit').innerText = `NIT: ${selectedProveedor.nit}`;
+                document.getElementById('selectedProveedorText').innerText = `Proveedor: ${selectedProveedor.nombre}`;
+                document.getElementById('selectedProveedorNit').innerText = `Nit: ${selectedProveedor.nit}`;
                 document.getElementById('proveedorHidden').value = selectedId;
             }
         });
@@ -168,8 +174,8 @@
             const selectedNit = item.getAttribute('data-nit');
             const selectedName = item.innerText.split(' - NIT: ')[0];
 
-            document.getElementById('selectedProveedorText').innerText = `Proveedor seleccionado: ${selectedName}`;
-            document.getElementById('selectedProveedorNit').innerText = `NIT: ${selectedNit}`;
+            document.getElementById('selectedProveedorText').innerText = `${selectedName}`;
+            document.getElementById('selectedProveedorNit').innerText = `${selectedNit}`;
             document.getElementById('proveedorHidden').value = selectedId;
 
             Swal.close();
@@ -193,25 +199,33 @@
         buscarProductoInput.addEventListener('keydown', manejarTeclasProducto);
 
         function actualizarListaProducto() {
-            const query = buscarProductoInput.value.toLowerCase();
-            const filteredProductos = productos.filter(producto => 
-                producto.nombre.toLowerCase().includes(query)
-            );
+    const query = buscarProductoInput.value.toLowerCase().trim();
+    
+    // Si el campo está vacío, oculta la lista
+    if (query === '') {
+        productosListDiv.innerHTML = '';
+        return;
+    }
 
-            let productosList = '';
-            filteredProductos.forEach((producto, index) => {
-                productosList += `<div class="producto-item ${index === 0 ? 'selected' : ''}" data-id="${producto.id}" data-nombre="${producto.nombre}">${producto.nombre}</div>`;
-            });
+    const filteredProductos = productos.filter(producto => 
+        producto.nombre.toLowerCase().includes(query)
+    );
 
-            selectedIndex = filteredProductos.length > 0 ? 0 : -1;
-            productosListDiv.innerHTML = productosList || '<p class="no-result">No se encontraron productos</p>';
+    let productosList = '';
+    filteredProductos.forEach((producto, index) => {
+        productosList += `<div class="producto-item ${index === 0 ? 'selected' : ''}" data-id="${producto.id}" data-nombre="${producto.nombre}">${producto.nombre}</div>`;
+    });
 
-            document.querySelectorAll('.producto-item').forEach((item, index) => {
-                item.addEventListener('click', function() {
-                    seleccionarProductoItem(item);
-                });
-            });
-        }
+    selectedIndex = filteredProductos.length > 0 ? 0 : -1;
+    productosListDiv.innerHTML = productosList || '<p class="no-result">No se encontraron productos</p>';
+
+    document.querySelectorAll('.producto-item').forEach((item, index) => {
+        item.addEventListener('click', function() {
+            seleccionarProductoItem(item);
+        });
+    });
+}
+
 
         function manejarTeclasProducto(event) {
             const items = document.querySelectorAll('.producto-item');
@@ -255,6 +269,7 @@
             Swal.close();
         }
     }
+    
 
     // Agregar producto a la tabla
     document.getElementById('agregarProductoButton').addEventListener('click', function() {
@@ -292,11 +307,99 @@
         document.getElementById('fecha_vencimiento').value = '';
         document.getElementById('cantidad').value = '';
 
-        // Añadir funcionalidad para eliminar
         newRow.querySelector('.eliminarButton').addEventListener('click', function() {
             tableBody.removeChild(newRow);
         });
     });
+
+    document.addEventListener("keydown", function(event) {
+    if (event.key === "F1") {
+        event.preventDefault(); // Evita que se abra la ayuda del navegador
+
+        Swal.fire({
+            title: 'Agregar Observación',
+            input: 'textarea',
+            inputPlaceholder: 'Escribe tu observación aquí...',
+            showCancelButton: true,
+            confirmButtonText: 'Generar PDF',
+            cancelButtonText: 'Cancelar',
+            preConfirm: (observacion) => {
+                if (!observacion) {
+                    Swal.showValidationMessage('La observación no puede estar vacía');
+                    return false;
+                }
+                return observacion;
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const observacion = result.value;
+
+                // Obtener datos de la tabla
+                let productos = [];
+                document.querySelectorAll("#productosTable tbody tr").forEach(row => {
+                    const columnas = row.querySelectorAll("td");
+                    productos.push({
+                        producto: columnas[0].innerText,
+                        lote: columnas[1].innerText,
+                        fecha_vencimiento: columnas[2].innerText,
+                        cantidad: columnas[3].innerText
+                    });
+                });
+
+                // Obtener datos del proveedor
+                const proveedor = {
+                    nombre: document.getElementById("selectedProveedorText").innerText,
+                    nit: document.getElementById("selectedProveedorNit").innerText
+                };
+
+                // Generar el PDF
+                generarPDF(observacion, productos, proveedor);
+            }
+        });
+    }
+});
+
+function generarPDF(observacion, productos, proveedor) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFont("helvetica", "bold");
+    doc.text("Nota de Entrada", 20, 20);
+    
+    doc.setFont("helvetica", "normal");
+    doc.text(`${proveedor.nombre}`, 20, 30);
+    doc.text(`${proveedor.nit}`, 20, 35);
+    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 40);
+    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, 20, 45);
+    doc.text(`Observación: ${observacion}`, 20, 50);
+
+    // Definir las columnas de la tabla
+    const columns = ["Producto", "Lote", "Fecha Vencimiento", "Cantidad"];
+    const rows = productos.map(producto => [
+        producto.producto,
+        producto.lote,
+        producto.fecha_vencimiento,
+        producto.cantidad
+    ]);
+
+    // Agregar la tabla al PDF
+    doc.autoTable({
+        startY: 50,  // Posición inicial
+        head: [columns],  // Encabezados de tabla
+        body: rows,  // Datos
+        theme: "grid"  // Estilo de tabla
+    });
+
+    // Abrir el PDF en una nueva pestaña
+    const pdfBlob = doc.output("blob");
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, "_blank");
+
+    // Opcional: Descargar automáticamente el PDF
+    // doc.save("factura_ingreso.pdf");
+}
+
+
 </script>
 
 <!-- Estilos CSS -->
