@@ -1,17 +1,16 @@
 {% extends 'Home/base.html' %}
 {% load static %}
 {% block content %}
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+<link rel="stylesheet" href="{% static 'css/Nota_entrada.css' %}">
 <h1>Registro de Ingresos</h1>
 
 <!-- Mensaje de error en caso de ser necesario -->
 {% if error %}
 <p class="error-message">{{ error }}</p>
 {% endif %}
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
-
-
 
 <div class="Container_entrada">
     
@@ -321,7 +320,7 @@
             input: 'textarea',
             inputPlaceholder: 'Escribe tu observación aquí...',
             showCancelButton: true,
-            confirmButtonText: 'Generar PDF',
+            confirmButtonText: 'Continuar',
             cancelButtonText: 'Cancelar',
             preConfirm: (observacion) => {
                 if (!observacion) {
@@ -347,234 +346,42 @@
                 });
 
                 // Obtener datos del proveedor
-                const proveedor = {
-                    nombre: document.getElementById("selectedProveedorText").innerText,
-                    nit: document.getElementById("selectedProveedorNit").innerText
-                };
+                const proveedorId = document.getElementById("proveedorHidden").value;
 
-                // Generar el PDF
-                generarPDF(observacion, productos, proveedor);
+                // Enviar los datos a Django para guardar en la base de datos
+                fetch("/guardar_entrada/", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": document.querySelector("[name=csrfmiddlewaretoken]").value
+                    },
+                    body: JSON.stringify({
+                        proveedor_id: proveedorId,
+                        observacion: observacion,
+                        productos: productos
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.id_entrada) {
+                        localStorage.setItem("datosEntrada", JSON.stringify({
+                            observacion: observacion,
+                            productos: productos,
+                            proveedor: document.getElementById("selectedProveedorText").innerText,
+                            id_entrada: data.id_entrada
+                        }));
+
+                        // Redirigir a la vista Vista_Entradapdf.html
+                        window.location.href = "Entradas/Vista_Entradapdf/";
+                    } else {
+                        Swal.fire("Error", "No se pudo guardar la entrada", "error");
+                    }
+                });
             }
         });
     }
 });
 
-function generarPDF(observacion, productos, proveedor) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    doc.setFont("helvetica", "bold");
-    doc.text("Nota de Entrada", 20, 20);
-    
-    doc.setFont("helvetica", "normal");
-    doc.text(`${proveedor.nombre}`, 20, 30);
-    doc.text(`${proveedor.nit}`, 20, 35);
-    doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 20, 40);
-    doc.text(`Hora: ${new Date().toLocaleTimeString()}`, 20, 45);
-    doc.text(`Observación: ${observacion}`, 20, 50);
-
-    // Definir las columnas de la tabla
-    const columns = ["Producto", "Lote", "Fecha Vencimiento", "Cantidad"];
-    const rows = productos.map(producto => [
-        producto.producto,
-        producto.lote,
-        producto.fecha_vencimiento,
-        producto.cantidad
-    ]);
-
-    // Agregar la tabla al PDF
-    doc.autoTable({
-        startY: 50,  // Posición inicial
-        head: [columns],  // Encabezados de tabla
-        body: rows,  // Datos
-        theme: "grid"  // Estilo de tabla
-    });
-
-    // Abrir el PDF en una nueva pestaña
-    const pdfBlob = doc.output("blob");
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-    window.open(pdfUrl, "_blank");
-
-    // Opcional: Descargar automáticamente el PDF
-    // doc.save("factura_ingreso.pdf");
-}
-
-
 </script>
-
-<!-- Estilos CSS -->
-<style>
-    .productos-list {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        margin-top: 5px;
-        background: white;
-        box-sizing: border-box;
-    }
-
-    .producto-item {
-        padding: 12px;
-        cursor: pointer;
-        border-bottom: 1px solid #ddd;
-        transition: background-color 0.3s ease;
-    }
-
-    .producto-item:last-child {
-        border-bottom: none;
-    }
-
-    .producto-item:hover, .producto-item.selected {
-        background-color: #007bff;
-        color: white;
-        border-radius: 4px;
-    }
-
-    .no-result {
-        padding: 10px;
-        color: red;
-        text-align: center;
-        font-style: italic;
-    }
-
-    .producto-item span {
-        display: inline-block;
-        margin-right: 10px;
-    }
-
-    .producto-item .producto-name {
-        font-size: 16px;
-        font-weight: bold;
-    }
-
-    .producto-item .producto-description {
-        font-size: 14px;
-        color: #555;
-    }
-
-    .producto-item.selected {
-        border: 2px solid #0056b3;
-        background-color: #0056b3;
-    }
-
-    .producto-item.selected .producto-name {
-        color: #ffffff;
-    }
-    .swal-input {
-        width: 100%;
-        padding: 10px;
-        margin: 8px 0;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-        box-sizing: border-box;
-    }
-
-    .proveedores-list {
-        max-height: 200px;
-        overflow-y: auto;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        margin-top: 5px;
-        background: white;
-    }
-
-    .proveedor-item {
-        padding: 10px;
-        cursor: pointer;
-        border-bottom: 1px solid #ddd;
-    }
-
-    .proveedor-item:last-child {
-        border-bottom: none;
-    }
-
-    .proveedor-item:hover, .proveedor-item.selected {
-        background-color: #007bff;
-        color: white;
-    }
-
-    .no-result {
-        padding: 10px;
-        color: red;
-        text-align: center;
-    }
-
-
-
-    .Container_entrada {
-        display: flex;
-        gap: 20px;
-        align-items: flex-start;
-    }
-
-    .table-container {
-        flex: 1;
-        flex-grow: 1;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-    }
-    form{
-        width: 400px;
-        flex-shrink: 0;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-    }
-
-    #lote, #fecha_vencimiento,#cantidad, #buscarProveedor, select {
-        width: 100%;
-        padding: 10px;
-        margin: 8px 0;
-        border-radius: 4px;
-        border: 1px solid #ccc;
-        font-size: 14px;
-    }
-
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-    }
-
-    th, td {
-        padding: 12px;
-        text-align: left;
-        border: 1px solid #ddd;
-    }
-
-    th {
-        background-color: #f2f2f2;
-    }
-
-    .eliminarButton {
-        background-color: #f44336;
-        color: white;
-        border: none;
-        padding: 6px 12px;
-        cursor: pointer;
-        border-radius: 4px;
-    }
-
-    .eliminarButton:hover {
-        background-color: #e53935;
-    }
-
-    #selectedProveedorText {
-        margin-bottom: 15px;
-        font-size: 16px;
-        color: #333;
-    }
-
-    .error-message {
-        color: red;
-        font-size: 14px;
-        margin-top: 10px;
-    }
-</style>
 
 {% endblock %}

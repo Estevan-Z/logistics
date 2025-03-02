@@ -263,33 +263,24 @@ def registrar_entrada(request):
     })
 
 
-def generar_pdf(request):
-    if request.method == "POST":
+
+def Vista_Entradapdf(request):
+    return render(request, 'Entradas/Vista_Entradapdf.html')
+
+def guardar_entrada(request):
+    if request.method == 'POST':
         data = json.loads(request.body)
 
-        observacion = data["observacion"]
-        productos = data["productos"]
-        proveedor = data["proveedor"]
+        proveedor_id = data.get('proveedor_id')
+        observacion = data.get('observacion')
+        productos = data.get('productos')
 
-        response = HttpResponse(content_type="application/pdf")
-        response["Content-Disposition"] = 'attachment; filename="factura.pdf"'
+        # Crear nueva entrada con ID automático
+        nueva_entrada = EntradaProducto(proveedor_id=proveedor_id, observacion=observacion)
+        nueva_entrada.save()  # Se genera automáticamente el id_entrada
 
-        # Crear PDF
-        p = canvas.Canvas(response, pagesize=letter)
-        p.drawString(100, 750, "Factura de Ingreso")
-        p.drawString(100, 730, f"Proveedor: {proveedor['nombre']} - NIT: {proveedor['nit']}")
-        p.drawString(100, 710, f"Observación: {observacion}")
+        # Aquí puedes guardar los productos asociados si tienes un modelo relacionado
 
-        y_position = 680
-        p.drawString(100, y_position, "Productos:")
-        y_position -= 20
+        return JsonResponse({"mensaje": "Entrada guardada correctamente", "id_entrada": nueva_entrada.id_entrada})
 
-        for producto in productos:
-            p.drawString(100, y_position, f"{producto['producto']} - Lote: {producto['lote']} - Cantidad: {producto['cantidad']} - Fecha Venc: {producto['fecha_vencimiento']}")
-            y_position -= 20
-
-        p.showPage()
-        p.save()
-
-        return response
-    return HttpResponse("Método no permitido", status=405)
+    return JsonResponse({"error": "Método no permitido"}, status=400)

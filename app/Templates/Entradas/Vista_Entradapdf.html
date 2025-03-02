@@ -1,0 +1,42 @@
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const datosEntrada = JSON.parse(localStorage.getItem("datosEntrada"));
+        if (datosEntrada) {
+            document.getElementById("idEntrada").innerText = datosEntrada.id_entrada;
+            document.getElementById("proveedor").innerText = datosEntrada.proveedor;
+            document.getElementById("observacion").innerText = datosEntrada.observacion;
+
+            let productosHTML = "";
+            datosEntrada.productos.forEach(producto => {
+                productosHTML += `
+                    <tr>
+                        <td>${producto.producto}</td>
+                        <td>${producto.lote}</td>
+                        <td>${producto.fecha_vencimiento}</td>
+                        <td>${producto.cantidad}</td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById("productosTableBody").innerHTML = productosHTML;
+        }
+    });
+</script>
+
+<h1>Detalles de la Entrada</h1>
+<p><strong>ID de Entrada:</strong> <span id="idEntrada"></span></p>
+<p><strong>Proveedor:</strong> <span id="proveedor"></span></p>
+<p><strong>Observación:</strong> <span id="observacion"></span></p>
+
+<h2>Productos</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Producto</th>
+            <th>Lote</th>
+            <th>Fecha Vencimiento</th>
+            <th>Cantidad</th>
+        </tr>
+    </thead>
+    <tbody id="productosTableBody"></tbody>
+</table>

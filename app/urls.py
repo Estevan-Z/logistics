@@ -22,8 +22,12 @@ urlpatterns = [
 
 
     path('subir_excel/', views.subir_excel, name='subir_excel'),
+    path('Entradas/Vista_Entradapdf/<int:entrada_id>/', views.Vista_Entradapdf, name='Vista_Entradapdf'),
+    path('guardar_entrada/', views.guardar_entrada, name='guardar_entrada')
+
+
+
     
-    path("generar_pdf/", views.generar_pdf, name="generar_pdf"),
 
 
     
