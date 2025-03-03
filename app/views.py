@@ -263,12 +263,8 @@ def registrar_entrada(request):
         'productos': productos,
     })
 
-
-
 def Vista_Entradapdf(request, entrada_id):
     return render(request, 'Entradas/Vista_Entradapdf.html', {'entrada_id': entrada_id})
-
-
 
 def guardar_entrada(request):
     if request.method == 'POST':

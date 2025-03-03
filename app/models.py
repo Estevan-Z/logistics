@@ -55,7 +55,7 @@ class Producto(models.Model):
     def __str__(self):
         return f"{self.id_producto} - {self.nombre_producto}"
 
-class NumeroEntrada(models.Model):  # Se mantiene solo una clase EntradaProducto
+class NumeroEntrada(models.Model): 
     id_entrada = models.CharField(max_length=10, unique=True, blank=True)  
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha_generacion = models.DateTimeField(auto_now_add=True)
