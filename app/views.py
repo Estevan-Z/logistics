@@ -277,7 +277,7 @@ def guardar_entrada(request):
             return JsonResponse({"error": "El campo proveedor_id es obligatorio"}, status=400)
 
         # Crear nueva entrada con ID automático
-        nueva_entrada = NumeroEntrada(proveedor_id=proveedor_id, observacion=observacion)
+        nueva_entrada = NumeroEntrada(proveedor_id=proveedor_id)
         nueva_entrada.save()
 
         return JsonResponse({"mensaje": "Entrada guardada correctamente", "id_entrada": nueva_entrada.id_entrada})
