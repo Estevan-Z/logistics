@@ -40,6 +40,13 @@
                         <span>Entrada</span>
                     </a>
                 </li>
+                <li class="menu-item {% if request.path == '/' %}active{% endif %}">
+                    <a href="{% url 'lista_numero_entradas' %}">
+                        <i class="ri-home-line"></i>
+                        <span>Lista Entradas</span>
+                    </a>
+                   
+                </li>
                <details>
                 <summary>Apertura de terceros</summary>
                    <li class="menu-item {% if 'crear_proveedor' in request.path %}active{% endif %}">

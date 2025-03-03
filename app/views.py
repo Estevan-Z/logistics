@@ -1,6 +1,6 @@
 
 from django.shortcuts import get_object_or_404, render, redirect
-from .models import Producto, ParametrosProducto, Proveedor, EntradaMercancia
+from .models import Producto, ParametrosProducto, Proveedor, EntradaMercancia, NumeroEntrada
 from django.core.files.storage import default_storage
 from .forms import ProductoForm, ProveedorForm
 from django.http import JsonResponse
@@ -12,6 +12,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
+import json
 import json
 
 def base(request):
@@ -264,8 +265,10 @@ def registrar_entrada(request):
 
 
 
-def Vista_Entradapdf(request):
-    return render(request, 'Entradas/Vista_Entradapdf.html')
+def Vista_Entradapdf(request, entrada_id):
+    return render(request, 'Entradas/Vista_Entradapdf.html', {'entrada_id': entrada_id})
+
+
 
 def guardar_entrada(request):
     if request.method == 'POST':
@@ -273,14 +276,18 @@ def guardar_entrada(request):
 
         proveedor_id = data.get('proveedor_id')
         observacion = data.get('observacion')
-        productos = data.get('productos')
+
+        if not proveedor_id:
+            return JsonResponse({"error": "El campo proveedor_id es obligatorio"}, status=400)
 
         # Crear nueva entrada con ID automático
-        nueva_entrada = EntradaProducto(proveedor_id=proveedor_id, observacion=observacion)
-        nueva_entrada.save()  # Se genera automáticamente el id_entrada
-
-        # Aquí puedes guardar los productos asociados si tienes un modelo relacionado
+        nueva_entrada = NumeroEntrada(proveedor_id=proveedor_id, observacion=observacion)
+        nueva_entrada.save()
 
         return JsonResponse({"mensaje": "Entrada guardada correctamente", "id_entrada": nueva_entrada.id_entrada})
 
     return JsonResponse({"error": "Método no permitido"}, status=400)
+
+def listar_numero_entradas(request):
+    numero_entradas = NumeroEntrada.objects.select_related('proveedor').all().order_by('-fecha_generacion')
+    return render(request, 'Entradas/lista_numero_entradas.html', {'numero_entradas': numero_entradas})

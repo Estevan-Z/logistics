@@ -55,15 +55,14 @@ class Producto(models.Model):
     def __str__(self):
         return f"{self.id_producto} - {self.nombre_producto}"
 
-class EntradaProducto(models.Model):  # Se mantiene solo una clase EntradaProducto
+class NumeroEntrada(models.Model):  # Se mantiene solo una clase EntradaProducto
     id_entrada = models.CharField(max_length=10, unique=True, blank=True)  
     proveedor = models.ForeignKey(Proveedor, on_delete=models.CASCADE)
     fecha_generacion = models.DateTimeField(auto_now_add=True)
-    observacion = models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.id_entrada:  
-            ultima_entrada = EntradaProducto.objects.order_by('-id').first()
+            ultima_entrada = NumeroEntrada.objects.order_by('-id').first()
             if ultima_entrada:
                 nuevo_id = int(ultima_entrada.id_entrada.split('-')[1]) + 1
             else:
@@ -99,7 +98,7 @@ class EntradaMercancia(models.Model):
         return f"Entrada {self.id_entrada} - {self.producto.nombre_producto} - {self.cantidad} unidades"
 
 class ProductoEntrada(models.Model):
-    entrada = models.ForeignKey(EntradaProducto, on_delete=models.CASCADE, related_name="productos")  # ✅ Se cambió "Entrada" por "EntradaProducto"
+    entrada = models.ForeignKey(NumeroEntrada, on_delete=models.CASCADE, related_name="productos")  
     nombre = models.CharField(max_length=255)
     lote = models.CharField(max_length=100)
     fecha_vencimiento = models.DateField()

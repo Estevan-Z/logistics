@@ -313,7 +313,7 @@
 
     document.addEventListener("keydown", function(event) {
     if (event.key === "F1") {
-        event.preventDefault(); // Evita que se abra la ayuda del navegador
+        event.preventDefault();
 
         Swal.fire({
             title: 'Agregar Observación',
@@ -347,6 +347,12 @@
 
                 // Obtener datos del proveedor
                 const proveedorId = document.getElementById("proveedorHidden").value;
+                const proveedorNombre = document.getElementById("selectedProveedorText").innerText;
+
+                if (productos.length === 0 || !proveedorId) {
+                    Swal.fire("Error", "Debe agregar productos y seleccionar un proveedor", "error");
+                    return;
+                }
 
                 // Enviar los datos a Django para guardar en la base de datos
                 fetch("/guardar_entrada/", {
@@ -364,23 +370,29 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.id_entrada) {
+                        // Guardar en localStorage
                         localStorage.setItem("datosEntrada", JSON.stringify({
+                            id_entrada: data.id_entrada,
+                            proveedor: proveedorNombre,
                             observacion: observacion,
-                            productos: productos,
-                            proveedor: document.getElementById("selectedProveedorText").innerText,
-                            id_entrada: data.id_entrada
+                            productos: productos
                         }));
 
-                        // Redirigir a la vista Vista_Entradapdf.html
-                        window.location.href = "Entradas/Vista_Entradapdf/";
+                        // Redirigir a la vista del PDF
+                        window.location.href = `/Entradas/Vista_Entradapdf/${data.id_entrada.replace("Ent-", "")}/`;
                     } else {
                         Swal.fire("Error", "No se pudo guardar la entrada", "error");
                     }
+                })
+                .catch(error => {
+                    console.error("Error al guardar la entrada:", error);
+                    Swal.fire("Error", "Hubo un problema al procesar la solicitud", "error");
                 });
             }
         });
     }
 });
+
 
 </script>
 

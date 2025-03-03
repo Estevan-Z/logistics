@@ -22,14 +22,8 @@ urlpatterns = [
 
 
     path('subir_excel/', views.subir_excel, name='subir_excel'),
-    path('Entradas/Vista_Entradapdf/<int:entrada_id>/', views.Vista_Entradapdf, name='Vista_Entradapdf'),
-    path('guardar_entrada/', views.guardar_entrada, name='guardar_entrada')
+    path('Entradas/Vista_Entradapdf/<str:entrada_id>/', views.Vista_Entradapdf, name='Vista_Entradapdf'),
+    path('guardar_entrada/', views.guardar_entrada, name='guardar_entrada'),
+    path('lista_numero_entradas/', views.listar_numero_entradas, name='lista_numero_entradas'),
 
-
-
-    
-
-
-    
-    
 ]
